@@ -2,5 +2,8 @@
   "name": "phragmen-deposit-issue",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@polkadot/api": "^6.10.3"
+  }
 }
