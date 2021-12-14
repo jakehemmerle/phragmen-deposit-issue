@@ -8,36 +8,31 @@ async function main() {
   // Create the API and wait until ready
   const api = await ApiPromise.create({ provider });
   const specVersion = (await api.query.system.lastRuntimeUpgrade()).toString();
-  // console.log(`- last runtime upgrade: ${specVersion}`);
   let blockNumber = 3899547;
   // first hit according to https://gist.github.com/emielvanderhoek/0a6cf51393e8d22de364b777f98cd453
   blockNumber = 3911406;
+  // blockNumber = 4353551;
+  const endingBlockNumber = 8591976;
 
-  while (blockNumber < 5661442) {
+  while (blockNumber < endingBlockNumber) {
     let blockHash = await api.rpc.chain.getBlockHash(blockNumber);
-    console.log(`- block hash at ${blockNumber} is ${blockHash}`);
+    console.log(`- block number: ${blockNumber}`);
     let signedBlock = await api.rpc.chain.getBlock(blockHash);
 
-    signedBlock.block.extrinsics.forEach((ex, index) => {
-      const {
-        isSigned,
-        meta,
-        method: { args, method, section },
-      } = ex;
-      console.log(`index: ${index}, extrinsic: ${method}`);
-      
-      // console.log(`method: ${method}`);
-      // console.log("meta",meta);
-      if(method === "removeVoter" || method === "vote") {
-        console.log(meta.toHuman());
+    signedBlock.block.extrinsics.forEach(async (extrinsic) => {
+      // TODO: Tweak to find call index of elections.vote and elections.removeVoter
+      if (
+        (extrinsic.callIndex[0] == 17 && extrinsic.callIndex[1] == 1) ||
+        (extrinsic.callIndex[0] == 17 && extrinsic.callIndex[1] == 0)
+      ) {
+        // Get sender address
+        const sender = extrinsic.signer.toString();
+        const reserves = await api.query.balances.reserves(sender);
+        const version = await api.query.balances.storageVersion();
+        // console.log(reserves);
+        console.log(version.registry);
       }
-      // explicit display of name, args & documentation
-      // console.log(
-      //   `${section}.${method}(${args.map((a) => a.toString()).join(", ")})`
-      // );
-      // console.log(meta.documentation.map((d) => d.toString()).join("\n"));
     });
-
     blockNumber++;
   }
   // console.log(`runtime version: ${(await api.rpc.state.getRuntimeVersion()).toString()}`);
